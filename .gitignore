@@ -1,0 +1,17 @@
+node_modules/
+.next/
+.runtime/
+.npm-cache/
+.data/
+node-runtime.zip
+node-shasums.txt
+*.tsbuildinfo
+test-results/
+playwright-report/
+.env*
+
+.codex/
+.agents/
+*.log
+.DS_Store
+Thumbs.db

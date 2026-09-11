@@ -1,0 +1,23 @@
+export type Color = 'ruby' | 'sapphire' | 'emerald' | 'topaz';
+export type Kind = Color | 'thief' | 'mining' | 'poison';
+export type Die = { id: string; kind: Kind };
+export type Play = Die & { value: number };
+export type Selection = [Play | null, Play | null];
+export type Jewel = Play & { obtainedTurn: number; postSellout: boolean };
+export type Player = { id: string; name: string; color: Color; cpu: boolean; bag: Die[]; jewels: Jewel[] };
+export type PoisonTask = { actor: string; target: string; candidates: string[] };
+export type Game = {
+  turn: number;
+  phase: 'select' | 'reveal' | 'inspect' | 'poison' | 'result' | 'over';
+  players: Player[];
+  market: Record<Color, (string | null)[]>;
+  miningBag: Die[];
+  miningCount?: number;
+  discard: Die[];
+  selections: Record<string, Selection>;
+  poisonTasks: PoisonTask[];
+  pendingAwards: { player: string; play: Play; postSellout?: boolean }[];
+  logs: string[];
+  history?: Record<string, Selection>[];
+  visualEvents?: { type: 'mining' | 'thief' | 'poison' | 'collision' | 'score'; player: string; from?: string; die: Play }[];
+};

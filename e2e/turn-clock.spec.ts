@@ -1,0 +1,33 @@
+import { test, expect } from '@playwright/test';
+import type { Session } from '../src/server/types';
+
+test('1分経過すると未確定の駒が自動選択され、公開後は確認を待つ', async ({ page, request }) => {
+  test.setTimeout(100_000);
+  const response = await request.post('/api/rooms', { data: { action: 'create', humanCount: 1, name: '時間テスト' } });
+  const session: Session = await response.json();
+  const headers = { Authorization: `Bearer ${session.token}` };
+  const startResponse = await request.post('/api/rooms', { headers, data: { action: 'start', code: session.code } });
+  const start = await startResponse.json();
+  expect(start.selectionDeadline - start.serverNow).toBeGreaterThan(58_000);
+  expect(start.selectionDeadline - start.serverNow).toBeLessThanOrEqual(60_000);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.addInitScript(s => localStorage.setItem('jewel-hunt-session', JSON.stringify(s)), session);
+  await page.goto('/');
+  await expect(page.getByRole('timer')).toBeVisible();
+  await page.reload();
+  const reloaded = await request.get(`/api/rooms?code=${session.code}`, { headers });
+  expect((await reloaded.json()).selectionDeadline).toBe(start.selectionDeadline);
+  await expect(page.locator('.turn-clock')).toHaveClass(/urgent/, { timeout: 65_000 });
+  await expect(page.getByRole('heading', { name: 'みんなの一手を確認しよう' })).toBeVisible({ timeout: 20_000 });
+  await expect(page.locator('.timeout-note')).toContainText('時間テストの駒をCPUが選択しました');
+  await expect(page.getByRole('timer')).toHaveCount(0);
+  const revealed = await request.get(`/api/rooms?code=${session.code}`, { headers });
+  const room = await revealed.json();
+  expect(room.game.phase).toBe('inspect');
+  expect(room.game.players.every((p: { jewels: unknown[] }) => p.jewels.length === 0)).toBe(true);
+  await page.getByRole('button', { name: '確認した · 得点と効果を実行' }).click();
+  await page.getByRole('button', { name: '次のターンへ' }).click();
+  await expect(page.getByRole('timer')).toBeVisible();
+  const next = await request.get(`/api/rooms?code=${session.code}`, { headers });
+  expect((await next.json()).selectionDeadline).toBeGreaterThan(start.selectionDeadline);
+});
