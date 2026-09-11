@@ -5,9 +5,9 @@ import { ArrowRight } from 'lucide-react';
 import { BoxCover } from './BoxCover';
 import './front.css';
 import type { Session } from '../server/types';
-export function Home({ onSession, onRules, initialCode }: { onSession: (s: Session) => void; onRules: () => void; initialCode: string }) {
-  const [count, setCount] = useState(1), [name, setName] = useState(''), [code, setCode] = useState(initialCode);
-  const [tab, setTab] = useState(initialCode ? 'join' : 'create'), [busy, setBusy] = useState(false), [error, setError] = useState('');
+export function Home({ onSession, onRules }: { onSession: (s: Session) => void; onRules: () => void }) {
+  const [count, setCount] = useState(1), [name, setName] = useState(''), [code, setCode] = useState('');
+  const [tab, setTab] = useState('create'), [busy, setBusy] = useState(false), [error, setError] = useState('');
   async function submit() {
     setBusy(true); setError('');
     try {
@@ -22,7 +22,7 @@ export function Home({ onSession, onRules, initialCode }: { onSession: (s: Sessi
       <form onSubmit={e => { e.preventDefault(); void submit(); }}><label className="field-label" htmlFor="hunter-name">あなたの名前<span>16文字まで</span></label><input id="hunter-name" maxLength={16} placeholder="ハンター" value={name} onChange={e => setName(e.target.value)} autoComplete="nickname" />
         {tab === 'create' ? <><label className="field-label">遊ぶ人数<span>人間のプレイヤー数</span></label><div className="player-count">{[1, 2, 3, 4].map(n => <button type="button" key={n} aria-pressed={count === n} className={count === n ? 'selected' : ''} onClick={() => setCount(n)}><b>{n}</b><span>人プレイ</span></button>)}</div><div className="cpu-note"><span>{count === 4 ? '4人のハンターで対戦します' : `${count}人で参加。空いた${4 - count}席はCPUが入ります`}</span></div></> : <><label className="field-label" htmlFor="room-code">ルームコード</label><input className="code-input" id="room-code" maxLength={6} placeholder="ABC123" value={code} onChange={e => setCode(e.target.value.toUpperCase().replace(/[^A-Z2-9]/g, ''))} autoCapitalize="characters" autoComplete="off" required /></>}
         {error && <p role="alert" className="error">{error}</p>}<button className="primary start-button" disabled={busy || (tab === 'join' && code.length !== 6)}>{busy ? '接続中…' : tab === 'create' ? 'ハントを始める' : 'ルームに参加する'}<ArrowRight /></button>
-      </form><p className="setup-footnote">友だちを呼ぶときは、作成後の招待リンクを送ってください。</p>
+      </form><p className="setup-footnote">友だちには、作成後に表示される招待コードを伝えてください。</p>
     </section>
     <section className="home-bottom"><p>初めて遊ぶ方へ。<br /><span>カップの中身と、宝石の集め方を紹介します。</span></p><button className="rules-link" onClick={onRules}>遊び方を読む <ArrowRight /></button></section>
   </main>;

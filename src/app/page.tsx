@@ -11,17 +11,16 @@ import { Bgm } from '../components/Bgm';
 
 export default function Page() {
   const [session, setSession] = useState<Session | null>(null), [room, setRoom] = useState<RoomView | null>(null);
-  const [rules, setRules] = useState(false), [busy, setBusy] = useState(false), [error, setError] = useState(''), [initialCode, setInitialCode] = useState('');
+  const [rules, setRules] = useState(false), [busy, setBusy] = useState(false), [error, setError] = useState('');
   const [revealing, setRevealing] = useState<number | null>(null), [leave, setLeave] = useState(false);
   const previous = useRef<string | null>(null), requestVersion = useRef(0);
   useEffect(() => {
-    const code = new URLSearchParams(location.search).get('room')?.toUpperCase() || ''; setInitialCode(code);
     const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
     if (navigation?.type !== 'reload') {
       try { sessionStorage.removeItem('jewel-hunt-session'); } catch { /* Storage may be unavailable. */ }
       return;
     }
-    try { const saved = sessionStorage.getItem('jewel-hunt-session'); if (saved) { const s = JSON.parse(saved) as Session; if (!code || code === s.code) setSession(s); } } catch { /* Storage may be unavailable in private browsers. */ }
+    try { const saved = sessionStorage.getItem('jewel-hunt-session'); if (saved) { const s = JSON.parse(saved) as Session; setSession(s); } } catch { /* Storage may be unavailable in private browsers. */ }
   }, []);
   const accept = useCallback((view: RoomView) => {
     const phase = view.game ? `${view.game.turn}:${view.game.phase}` : 'lobby';
@@ -62,10 +61,10 @@ export default function Page() {
   }
   function home() {
     try { sessionStorage.removeItem('jewel-hunt-session'); } catch { /* Storage may be unavailable. */ }
-    setSession(null); setRoom(null); setLeave(false); setRevealing(null); setError(''); previous.current = null; history.replaceState({}, '', homePath); setInitialCode(''); }
+    setSession(null); setRoom(null); setLeave(false); setRevealing(null); setError(''); previous.current = null; history.replaceState({}, '', homePath); }
   return <div className={`app-shell ${room?.game ? 'at-the-table' : 'front-room'}`}><header className="site-header"><button className="brand" onClick={() => session ? setLeave(true) : home()} aria-label="ジュエルハント ホーム"><GemIcon /><span>JEWEL HUNT<small>everyday</small></span></button><div className="header-actions"><Bgm />{room && <span className="header-room">ROOM <b>{room.code}</b></span>}<button className="help-button" aria-label="遊び方" onClick={() => setRules(true)}><CircleHelp /><span>遊び方</span></button>{session && <button className="icon-button" onClick={() => setLeave(true)} aria-label="ホームに戻る"><LogOut /></button>}</div></header>
     {error && <div className="error-banner" role="alert">{error}<button className="icon-button" onClick={() => setError('')} aria-label="通知を閉じる"><X /></button></div>}
-    {!session ? <Home onSession={saveSession} onRules={() => setRules(true)} initialCode={initialCode} key={initialCode} /> : !room ? <main className="loading"><GemIcon /><h2>テーブルに接続しています…</h2><button className="text-button" onClick={home}><ArrowLeft />ホームへ戻る</button></main> : !room.game ? <Lobby room={room} act={act} busy={busy} /> : <GameBoard room={room} act={act} busy={busy} revealing={revealing} />}
+    {!session ? <Home onSession={saveSession} onRules={() => setRules(true)} /> : !room ? <main className="loading"><GemIcon /><h2>テーブルに接続しています…</h2><button className="text-button" onClick={home}><ArrowLeft />ホームへ戻る</button></main> : !room.game ? <Lobby room={room} act={act} busy={busy} /> : <GameBoard room={room} act={act} busy={busy} revealing={revealing} />}
     <footer className="site-footer"><span>JEWEL HUNT <i>everyday</i></span><span>1〜4人のカップと宝石のゲーム</span></footer>
     {rules && <Rules onClose={() => setRules(false)} />}
     {leave && <div className="modal-backdrop"><section className="modal leave-modal" role="dialog" aria-modal="true" aria-labelledby="leave-title"><h2 id="leave-title">ホームに戻りますか？</h2><p>ホームに戻ると、この対戦への参加情報は消えます。対戦を続ける場合は「ゲームを続ける」を選んでください。</p><button className="primary" onClick={home}>ホームへ戻る</button><button className="text-button" onClick={() => setLeave(false)}>ゲームを続ける</button></section></div>}
