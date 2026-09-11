@@ -11,6 +11,7 @@ for (const name of ['package.json', 'next.config.ts', 'tsconfig.json', 'next-env
 fs.cpSync(path.join(root, 'src'), path.join(staging, 'src'), {
   recursive: true, filter: source => source !== path.join(root, 'src', 'app', 'api'),
 });
+fs.cpSync(path.join(root, 'public'), path.join(staging, 'public'), { recursive: true });
 fs.symlinkSync(path.join(root, 'node_modules'), path.join(staging, 'node_modules'), process.platform === 'win32' ? 'junction' : 'dir');
 const result = spawnSync(process.execPath, [path.join(root, 'node_modules/next/dist/bin/next'), 'build'], {
   cwd: staging, stdio: 'inherit', env: { ...process.env, PAGES_EXPORT: '1' },

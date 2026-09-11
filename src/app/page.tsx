@@ -7,6 +7,7 @@ import { Home } from '../components/Home';
 import { Lobby } from '../components/Lobby';
 import { GameBoard } from '../components/GameBoard';
 import { Rules } from '../components/Rules';
+import { Bgm } from '../components/Bgm';
 
 export default function Page() {
   const [session, setSession] = useState<Session | null>(null), [room, setRoom] = useState<RoomView | null>(null);
@@ -62,7 +63,7 @@ export default function Page() {
   function home() {
     try { sessionStorage.removeItem('jewel-hunt-session'); } catch { /* Storage may be unavailable. */ }
     setSession(null); setRoom(null); setLeave(false); setRevealing(null); setError(''); previous.current = null; history.replaceState({}, '', homePath); setInitialCode(''); }
-  return <div className={`app-shell ${room?.game ? 'at-the-table' : 'front-room'}`}><header className="site-header"><button className="brand" onClick={() => session ? setLeave(true) : home()} aria-label="ジュエルハント ホーム"><GemIcon /><span>JEWEL HUNT<small>everyday</small></span></button><div className="header-actions">{room && <span className="header-room">ROOM <b>{room.code}</b></span>}<button className="help-button" aria-label="遊び方" onClick={() => setRules(true)}><CircleHelp /><span>遊び方</span></button>{session && <button className="icon-button" onClick={() => setLeave(true)} aria-label="ホームに戻る"><LogOut /></button>}</div></header>
+  return <div className={`app-shell ${room?.game ? 'at-the-table' : 'front-room'}`}><header className="site-header"><button className="brand" onClick={() => session ? setLeave(true) : home()} aria-label="ジュエルハント ホーム"><GemIcon /><span>JEWEL HUNT<small>everyday</small></span></button><div className="header-actions"><Bgm />{room && <span className="header-room">ROOM <b>{room.code}</b></span>}<button className="help-button" aria-label="遊び方" onClick={() => setRules(true)}><CircleHelp /><span>遊び方</span></button>{session && <button className="icon-button" onClick={() => setLeave(true)} aria-label="ホームに戻る"><LogOut /></button>}</div></header>
     {error && <div className="error-banner" role="alert">{error}<button className="icon-button" onClick={() => setError('')} aria-label="通知を閉じる"><X /></button></div>}
     {!session ? <Home onSession={saveSession} onRules={() => setRules(true)} initialCode={initialCode} key={initialCode} /> : !room ? <main className="loading"><GemIcon /><h2>テーブルに接続しています…</h2><button className="text-button" onClick={home}><ArrowLeft />ホームへ戻る</button></main> : !room.game ? <Lobby room={room} act={act} busy={busy} /> : <GameBoard room={room} act={act} busy={busy} revealing={revealing} />}
     <footer className="site-footer"><span>JEWEL HUNT <i>everyday</i></span><span>1〜4人のカップと宝石のゲーム</span></footer>
