@@ -15,3 +15,7 @@ playwright-report/
 *.log
 .DS_Store
 Thumbs.db
+
+.pages-build/
+supabase/functions/jewel-rooms/index.ts
+supabase/.temp/

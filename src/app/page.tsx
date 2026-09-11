@@ -1,4 +1,5 @@
 'use client';
+import { roomFetch, homePath } from '../lib/api';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { CircleHelp, LogOut, Gem as GemIcon, X, ArrowLeft } from 'lucide-react';
 import type { RoomView, Session } from '../server/types';
@@ -33,7 +34,7 @@ export default function Page() {
     const poll = async () => {
       const version = requestVersion.current;
       try {
-        const response = await fetch(`/api/rooms?code=${session.code}`, { headers: { Authorization: `Bearer ${session.token}` }, cache: 'no-store', signal: controller.signal });
+        const response = await roomFetch(`?code=${session.code}`, { headers: { Authorization: `Bearer ${session.token}` }, cache: 'no-store', signal: controller.signal });
         const view = await response.json(); if (!response.ok) throw new Error(view.error);
         if (!stopped && version === requestVersion.current) { accept(view); setError(''); }
       } catch (e) { if (!stopped) setError(e instanceof Error ? e.message : '再接続しています…'); }
@@ -49,11 +50,11 @@ export default function Page() {
     if (!session || busy) return;
     requestVersion.current++; setBusy(true); setError('');
     try {
-      const response = await fetch('/api/rooms', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.token}` }, body: JSON.stringify({ action, code: session.code, ...data }) });
+      const response = await roomFetch('', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.token}` }, body: JSON.stringify({ action, code: session.code, ...data }) });
       const view = await response.json(); if (!response.ok) throw new Error(view.error); accept(view);
     } catch (e) { setError(e instanceof Error ? e.message : '操作に失敗しました'); } finally { requestVersion.current++; setBusy(false); }
   }
-  function home() { setSession(null); setRoom(null); setLeave(false); setRevealing(null); setError(''); previous.current = null; history.replaceState({}, '', '/'); setInitialCode(''); }
+  function home() { setSession(null); setRoom(null); setLeave(false); setRevealing(null); setError(''); previous.current = null; history.replaceState({}, '', homePath); setInitialCode(''); }
   return <div className={`app-shell ${room?.game ? 'at-the-table' : 'front-room'}`}><header className="site-header"><button className="brand" onClick={() => session ? setLeave(true) : home()} aria-label="ジュエルハント ホーム"><GemIcon /><span>JEWEL HUNT<small>everyday</small></span></button><div className="header-actions">{room && <span className="header-room">ROOM <b>{room.code}</b></span>}<button className="help-button" aria-label="遊び方" onClick={() => setRules(true)}><CircleHelp /><span>遊び方</span></button>{session && <button className="icon-button" onClick={() => setLeave(true)} aria-label="ホームに戻る"><LogOut /></button>}</div></header>
     {error && <div className="error-banner" role="alert">{error}<button className="icon-button" onClick={() => setError('')} aria-label="通知を閉じる"><X /></button></div>}
     {!session ? <Home onSession={saveSession} onRules={() => setRules(true)} initialCode={initialCode} key={initialCode} /> : !room ? <main className="loading"><GemIcon /><h2>テーブルに接続しています…</h2><button className="text-button" onClick={home}><ArrowLeft />ホームへ戻る</button></main> : !room.game ? <Lobby room={room} act={act} busy={busy} /> : <GameBoard room={room} act={act} busy={busy} revealing={revealing} />}

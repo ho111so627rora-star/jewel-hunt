@@ -1,4 +1,5 @@
 'use client';
+import { roomFetch } from '../lib/api';
 import { useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { BoxCover } from './BoxCover';
@@ -10,7 +11,7 @@ export function Home({ onSession, onRules, initialCode }: { onSession: (s: Sessi
   async function submit() {
     setBusy(true); setError('');
     try {
-      const response = await fetch('/api/rooms', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: tab, humanCount: count, name, code }) });
+      const response = await roomFetch('', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: tab, humanCount: count, name, code }) });
       const result = await response.json(); if (!response.ok) throw new Error(result.error); onSession(result);
     } catch (e) { setError(e instanceof Error ? e.message : '接続に失敗しました'); } finally { setBusy(false); }
   }

@@ -1,0 +1,4 @@
+project_id = "jewel-hunt"
+
+[functions.jewel-rooms]
+verify_jwt = false
