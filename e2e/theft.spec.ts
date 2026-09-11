@@ -22,8 +22,8 @@ test('向かいの泥棒が宝石を得点にし、双方に移動先を表示�
   expect(result.game!.players[1].jewels).toHaveLength(1);
   expect(result.game!.players[1].jewels[0]).toMatchObject({ kind: 'ruby', value: 6 });
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.addInitScript(s => localStorage.setItem('jewel-hunt-session', JSON.stringify(s)), a);
-  await page.goto('/');
+  await page.addInitScript(s => sessionStorage.setItem('jewel-hunt-session', JSON.stringify(s)), a);
+  await page.goto('/'); await page.reload();
   await expect(page.locator('.table-world')).toHaveAttribute('data-renderer', 'webgl', { timeout: 30000 });
   await expect(page.locator('.mining-reveal')).toHaveCount(0);
   await expect(page.locator('.mined-die')).toHaveCount(0);

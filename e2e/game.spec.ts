@@ -89,8 +89,8 @@ test('同じ卓でも2人の画面は自分の席が手前になる', async ({ b
   const baseURL = process.env.PLAYWRIGHT_BASE_URL || 'http://127.0.0.1:3000';
   for (const [index, session] of [host, guest].entries()) {
     const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
-    await context.addInitScript(s => localStorage.setItem('jewel-hunt-session', JSON.stringify(s)), session);
-    const page = await context.newPage(); await page.goto(baseURL);
+    await context.addInitScript(s => sessionStorage.setItem('jewel-hunt-session', JSON.stringify(s)), session);
+    const page = await context.newPage(); await page.goto(baseURL); await page.reload();
     await expect(page.locator('.table-world')).toHaveAttribute('data-renderer', 'webgl', { timeout: 30000 });
     await expect(page.locator('.table-world')).toHaveAttribute('data-viewer-seat', session.playerId);
     await expect(page.locator(`[data-player="${session.playerId}"]`)).toHaveAttribute('data-seat-offset', '0');

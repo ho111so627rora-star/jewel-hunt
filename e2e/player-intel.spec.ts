@@ -32,8 +32,8 @@ test('相手の宝石・使用数とターンごとの対戦ラインを確認�
   await action({ action: 'resolve' }, host); // Repeated confirmation must not count twice.
   expect((await get(guest)).game!.phase).toBe('inspect');
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.addInitScript(s => localStorage.setItem('jewel-hunt-session', JSON.stringify(s)), guest);
-  await page.goto('/');
+  await page.addInitScript(s => sessionStorage.setItem('jewel-hunt-session', JSON.stringify(s)), guest);
+  await page.goto('/'); await page.reload();
   await expect(page.locator('.table-world')).toHaveAttribute('data-renderer', 'webgl', { timeout: 30000 });
   await expect(page.locator('.table-world')).toHaveAttribute('data-match-from', 'p1');
   await expect(page.locator('.table-world')).toHaveAttribute('data-match-to', 'p0');

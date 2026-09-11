@@ -33,8 +33,8 @@ test('劇薬で赤6を失わせるとマーケットと次ターンの6の選択
   await act({ action: 'poison', jewelId: before.game!.players[0].jewels[0].id }, seats[2]);
   for (const seat of seats) expect((await get(seat)).game!.market.ruby[5]).toBeNull();
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.addInitScript(s => localStorage.setItem('jewel-hunt-session', JSON.stringify(s)), host);
-  await page.goto('/');
+  await page.addInitScript(s => sessionStorage.setItem('jewel-hunt-session', JSON.stringify(s)), host);
+  await page.goto('/'); await page.reload();
   await page.getByRole('button', { name: '宝石の空き目' }).click();
   await expect(page.locator('.market-row.ruby .market-slot').nth(5)).toHaveAttribute('title', '6点：未獲得');
   await page.getByRole('button', { name: '卓に戻る' }).click();

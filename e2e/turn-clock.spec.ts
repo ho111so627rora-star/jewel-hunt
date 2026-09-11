@@ -11,8 +11,8 @@ test('1分経過すると未確定の駒が自動選択され、公開後は確�
   expect(start.selectionDeadline - start.serverNow).toBeGreaterThan(58_000);
   expect(start.selectionDeadline - start.serverNow).toBeLessThanOrEqual(60_000);
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.addInitScript(s => localStorage.setItem('jewel-hunt-session', JSON.stringify(s)), session);
-  await page.goto('/');
+  await page.addInitScript(s => sessionStorage.setItem('jewel-hunt-session', JSON.stringify(s)), session);
+  await page.goto('/'); await page.reload();
   await expect(page.getByRole('timer')).toBeVisible();
   await page.reload();
   const reloaded = await request.get(`/api/rooms?code=${session.code}`, { headers });
