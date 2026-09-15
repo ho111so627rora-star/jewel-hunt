@@ -54,6 +54,7 @@ export function GameBoard({ room, busy, act, revealing }: { room: RoomView; busy
     </section>}
     <section className="table-stage" aria-label={game.players.length + '人で囲むゲーム卓'}>
       <TableCanvas state={{ game, me: room.me, draft: effectiveDraft, side, locked: room.locked, overhead, revealAt: room.revealAt, serverNow: room.serverNow, miningMixing: mining.mixing }} opponent={opponent.id} onSide={setSide} onChest={() => setDrawer('market')} onPlayer={id => { setInspectedPlayer(id); setDrawer('collection'); }} />
+      <div className="turn-flash" key={game.turn} aria-hidden="true" />
       <div className="table-tools"><button onClick={() => setDrawer('market')}><GemIcon /><span>宝石の空き目</span></button><button onClick={() => { setInspectedPlayer(opponent.id); setDrawer('collection'); }}><Trophy /><span>みんなの持ち物</span></button></div>
       <MiningReveal events={mining.events} game={game} step={mining.step} />
       {countdown && <div className="table-countdown" role="status"><span>全員の準備がそろいました</span><strong key={revealing}>{revealing || 'せーの！'}</strong><h2>せーので、カップを公開。</h2></div>}

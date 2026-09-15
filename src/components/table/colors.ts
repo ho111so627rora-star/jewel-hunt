@@ -1,1 +1,1 @@
-export const PALETTE = { ruby: '#c34155', sapphire: '#3575b9', emerald: '#298b71', topaz: '#d3aa49' };
+export const PALETTE = { ruby: '#c23150', sapphire: '#2f6fae', emerald: '#1f8a6c', topaz: '#d6a12d' };

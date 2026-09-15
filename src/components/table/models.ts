@@ -3,14 +3,14 @@ import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeom
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { Color, Kind, Play } from '../../game/types';
 
-export const PALETTE: Record<Color, string> = { ruby: '#b92340', sapphire: '#2261aa', emerald: '#13876a', topaz: '#d6a12d' };
-export const GOLD = '#c49b50';
+export const PALETTE: Record<Color, string> = { ruby: '#c23150', sapphire: '#2f6fae', emerald: '#1f8a6c', topaz: '#d6a12d' };
+export const GOLD = '#b9923e';
 const textureCache = new Map<string, THREE.CanvasTexture>();
 export function texture(kind: 'wood' | 'felt' | 'leather') {
   if (textureCache.has(kind)) return textureCache.get(kind)!;
   const canvas = document.createElement('canvas'); canvas.width = canvas.height = 512;
   const ctx = canvas.getContext('2d')!;
-  ctx.fillStyle = kind === 'wood' ? '#51301c' : kind === 'felt' ? '#174b3c' : '#513b29'; ctx.fillRect(0, 0, 512, 512);
+  ctx.fillStyle = kind === 'wood' ? '#3c2612' : kind === 'felt' ? '#11241a' : '#382718'; ctx.fillRect(0, 0, 512, 512);
   let seed = 9182; const rand = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
   for (let i = 0; i < (kind === 'wood' ? 1400 : 22000); i++) {
     const x = rand() * 512, y = rand() * 512;

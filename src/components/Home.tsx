@@ -19,7 +19,7 @@ export function Home({ onSession, onRules }: { onSession: (s: Session) => void; 
     } catch (e) { setError(e instanceof Error ? e.message : '接続に失敗しました'); } finally { setBusy(false); }
   }
   return <main className="home">
-    <section className="hero"><div className="hero-copy"><p className="cover-kicker">カップに隠す、宝石のボードゲーム</p><h1>ファントムジェム<span>Phantom Gem</span></h1><p className="hero-description">宝石を出すか、泥棒を忍ばせるか。<br />向かいのカップを読んで、10ターン。</p></div><BoxCover /><p className="box-specs"><span>1〜4人で遊べます</span><span>1ターンの思考時間 60秒</span></p></section>
+    <section className="hero"><div className="hero-copy"><p className="cover-kicker">カップに隠す、宝石のボードゲーム</p><h1 className="hero-title">ファントムジェム<span>PHANTOM GEM</span></h1><p className="hero-tagline">幻影の宝石を、奪い合え。</p><p className="hero-description">宝石を出すか、泥棒を忍ばせるか。<br />向かいのカップを読んで、10ターン。</p></div><BoxCover /><p className="box-specs"><span>1〜4人で遊べます</span><span>1ターンの思考時間 60秒</span></p></section>
     <section className="setup-panel"><div className="panel-heading"><h2>さあ、席につこう。</h2><p>ひとりならCPUと。集まったら友だちと。</p></div>
       <div className="tabs"><button className={tab === 'create' ? 'active' : ''} onClick={() => { setTab('create'); setError(''); }}>ゲームを作る</button><button className={tab === 'join' ? 'active' : ''} onClick={() => { setTab('join'); setError(''); }}>ルームに参加</button></div>
       <form onSubmit={e => { e.preventDefault(); void submit(); }}><label className="field-label" htmlFor="hunter-name">あなたの名前<span>16文字まで</span></label><input id="hunter-name" maxLength={16} placeholder="プレイヤー" value={name} onChange={e => setName(e.target.value)} autoComplete="nickname" />
