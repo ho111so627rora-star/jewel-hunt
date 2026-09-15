@@ -10,11 +10,12 @@ function getCtx(): AudioContext | null {
   if (ctx.state === 'suspended') void ctx.resume();
   return ctx;
 }
+const MASTER = 1.7; // Keeps cues audible over the BGM (Bgm.tsx plays at .55 volume); tune both together.
 function tone(ac: AudioContext, freq: number, start: number, duration: number, type: OscillatorType, gain: number) {
   const osc = ac.createOscillator(), g = ac.createGain();
   osc.type = type; osc.frequency.setValueAtTime(freq, start);
   g.gain.setValueAtTime(0, start);
-  g.gain.linearRampToValueAtTime(gain, start + .012);
+  g.gain.linearRampToValueAtTime(gain * MASTER, start + .012);
   g.gain.exponentialRampToValueAtTime(.0001, start + duration);
   osc.connect(g); g.connect(ac.destination);
   osc.start(start); osc.stop(start + duration + .02);
@@ -26,7 +27,7 @@ function noise(ac: AudioContext, start: number, duration: number, gain: number, 
   for (let i = 0; i < size; i++) data[i] = Math.random() * 2 - 1;
   const src = ac.createBufferSource(); src.buffer = buffer;
   const filter = ac.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = filterFreq;
-  const g = ac.createGain(); g.gain.setValueAtTime(gain, start); g.gain.exponentialRampToValueAtTime(.0001, start + duration);
+  const g = ac.createGain(); g.gain.setValueAtTime(gain * MASTER, start); g.gain.exponentialRampToValueAtTime(.0001, start + duration);
   src.connect(filter); filter.connect(g); g.connect(ac.destination);
   src.start(start); src.stop(start + duration + .02);
 }

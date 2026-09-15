@@ -6,6 +6,7 @@ export function Bgm() {
   const audio = useRef<HTMLAudioElement>(null);
   useEffect(() => {
     const track = audio.current!;
+    track.volume = .55; // Leaves headroom so synthesized SFX (lib/sfx.ts) stay audible over the BGM.
     const start = () => {
       if (!document.hidden && track.paused) void track.play().catch(() => { /* Retry on the next user gesture if autoplay is blocked. */ });
     };
