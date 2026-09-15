@@ -5,12 +5,13 @@ import { Gem, DieFace } from '../Gem';
 
 export function TableLedger({ game, me }: { game: Game; me: string }) {
   const open = ['inspect', 'poison', 'result', 'over'].includes(game.phase);
+  const activeColors = COLORS.filter(color => game.players.some(p => p.color === color));
   return <section className="table-ledger" aria-label="全員の宝石と公開した駒">
     {game.players.map(p => <article className={`ledger-seat ${p.color}`} key={p.id} data-ledger-player={p.id}>
       <header><Gem kind={p.color} /><b>{p.name}{p.id === me ? '（あなた）' : ''}</b><strong>{score(p, game.phase === 'over').total}<small>pt</small></strong></header>
       {open && <><p className="ledger-label">今回出した駒</p><div className="ledger-plays" aria-label={`${p.name}の公開した駒`}>{game.selections[p.id]?.map((play, i) => <div key={i}><small>{i === 0 ? '左' : '右'}</small><DieFace play={play} /></div>)}</div></>}
       <p className="ledger-label">獲得済みの宝石 · 得点</p>
-      <div className="ledger-jewels" aria-label={`${p.name}の得点の内訳`}>{COLORS.map(color => {
+      <div className="ledger-jewels" aria-label={`${p.name}の得点の内訳`}>{activeColors.map(color => {
         const jewels = p.jewels.filter(j => j.kind === color);
         return <div key={color}><Gem kind={color} /><span className={color}>{jewels.length ? [...new Set(jewels.map(j => j.value))].sort((a,b) => a-b).map(value => <b key={value} aria-label={`${LABELS[color]} ${value}点 ${jewels.filter(j => j.value === value).length}個`}>{value}{jewels.filter(j => j.value === value).length > 1 && <small>×{jewels.filter(j => j.value === value).length}</small>}</b>) : <small>—</small>}</span></div>;
       })}</div>

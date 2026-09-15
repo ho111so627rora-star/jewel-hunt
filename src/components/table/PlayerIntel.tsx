@@ -6,9 +6,10 @@ import { Gem } from '../Gem';
 export function PlayerIntel({ game, selected, opponent, me, onSelect }: { game: Game; selected: string; opponent: string; me: string; onSelect: (id: string) => void }) {
   const player = game.players.find(p => p.id === selected) || game.players[0];
   const points = score(player, game.phase === 'over');
+  const activeColors = COLORS.filter(color => game.players.some(p => p.color === color));
   return <div className="player-intel"><div className="intel-tabs" role="tablist" aria-label="確認するプレイヤー">{game.players.map(p => <button key={p.id} role="tab" id={`intel-tab-${p.id}`} aria-controls="intel-panel" aria-selected={p.id === player.id} onClick={() => onSelect(p.id)}><Gem kind={p.color} /><span>{p.name}</span></button>)}</div>
     <section id="intel-panel" role="tabpanel" aria-labelledby={`intel-tab-${player.id}`}><div className="intel-heading"><div><span>{player.id === me ? 'あなたの席' : player.id === opponent ? '今回の対戦相手' : 'プレイヤーの公開情報'}</span><h3><Gem kind={player.color} />{player.name}</h3></div><strong>{points.total}<small>pt</small></strong></div>
-      <h4>得点として持っている宝石</h4><div className="intel-jewels">{COLORS.map(color => {
+      <h4>得点として持っている宝石</h4><div className="intel-jewels">{activeColors.map(color => {
         const jewels = player.jewels.filter(j => j.kind === color).sort((a, b) => b.value - a.value);
         const counts = new Map<number, number>(); jewels.forEach(j => counts.set(j.value, (counts.get(j.value) || 0) + 1));
         return <div className={`intel-color-row ${color}`} key={color}><span><Gem kind={color} />{LABELS[color]}</span><div>{counts.size ? [...counts].map(([value, count]) => <b key={value} aria-label={`${LABELS[color]} ${value}点 ${count}個`}>{value}{count > 1 && <small>×{count}</small>}</b>) : <small className="intel-none">未獲得</small>}</div><strong>{jewels.reduce((sum, j) => sum + j.value, 0)}<small>pt</small></strong></div>;
