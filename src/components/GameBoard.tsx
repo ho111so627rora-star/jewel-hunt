@@ -14,6 +14,7 @@ import { MiningReveal, useMiningReveal } from './table/MiningReveal';
 import { TurnClock } from './table/TurnClock';
 import { PlayerIntel } from './table/PlayerIntel';
 import { useDialog } from './useDialog';
+import { playSfx } from '../lib/sfx';
 import './table/table.css';
 const TableCanvas = dynamic(() => import('./table/TableCanvas'), { ssr: false, loading: () => <div className="table-world world-loading">卓の準備をしています…</div> });
 
@@ -31,6 +32,32 @@ export function GameBoard({ room, busy, act, revealing }: { room: RoomView; busy
   const [inspectedPlayer, setInspectedPlayer] = useState(opponent.id);
   const [settled, setSettled] = useState(true), previousPhase = useRef(game.phase);
   useEffect(() => { setDraft(game.selections[room.me] || [null, null]); setSide(0); }, [game.turn, room.me]);
+  const mountedTurn = useRef(false);
+  useEffect(() => { if (mountedTurn.current) playSfx('turn'); mountedTurn.current = true; }, [game.turn]);
+  const wasCountdown = useRef(false);
+  useEffect(() => {
+    const countdown = game.phase === 'reveal';
+    if (countdown && !wasCountdown.current) playSfx('reveal');
+    wasCountdown.current = countdown;
+  }, [game.phase]);
+  const playedEventsTurn = useRef(-1), eventTimeouts = useRef<ReturnType<typeof setTimeout>[]>([]);
+  useEffect(() => {
+    if (!['inspect', 'poison', 'result', 'over'].includes(game.phase) || playedEventsTurn.current === game.turn) return;
+    playedEventsTurn.current = game.turn;
+    // Not returned as cleanup: polling gives visualEvents a new reference every ~550ms, which would
+    // otherwise cancel these before the staggered reveal (900ms+) gets a chance to fire.
+    (game.visualEvents || []).forEach((event, i) => eventTimeouts.current.push(setTimeout(() => {
+      if (event.type === 'thief') playSfx('steal');
+      else if (event.type === 'collision') playSfx('collision');
+      else if (event.type === 'mining') playSfx('mining');
+    }, 900 + i * 210)));
+  }, [game.phase, game.turn, game.visualEvents]);
+  useEffect(() => () => eventTimeouts.current.forEach(clearTimeout), []);
+  const playedVictory = useRef(false);
+  useEffect(() => {
+    if (game.phase === 'over') { if (!playedVictory.current) { playSfx('victory'); playedVictory.current = true; } }
+    else playedVictory.current = false;
+  }, [game.phase]);
   useEffect(() => {
     const previous = previousPhase.current; previousPhase.current = game.phase;
     if (game.phase === 'select' || game.phase === 'reveal' || game.phase === 'inspect') { setSettled(false); return; }
@@ -50,7 +77,7 @@ export function GameBoard({ room, busy, act, revealing }: { room: RoomView; busy
     {game.phase === 'select' && room.selectionDeadline && <TurnClock deadline={room.selectionDeadline} serverNow={room.serverNow} />}
     {!!room.timedOut?.length && game.phase !== 'select' && <p className="timeout-note">時間切れのため、{game.players.filter(p => room.timedOut!.includes(p.id)).map(p => p.name).join('・')}の駒をCPUが選択しました。</p>}
     {!final && game.phase !== 'select' && <section className="table-aftermath" aria-live="polite">
-      {countdown ? <><span className="aftermath-label">EVERYONE READY</span><h2>手を添えて、その瞬間を待とう。</h2><p>全員のカップを同じ合図で持ち上げます。</p></> : game.phase === 'inspect' ? <><span className="aftermath-label">CUPS OPEN</span><h2>みんなの一手を確認しよう</h2><p>得点や駒はまだ動きません。全員が確認すると処理を始めます。</p><button className="primary" aria-label="確認した · 得点と効果を実行" disabled={busy || room.reviewed?.includes(room.me)} onClick={() => void act('resolve')}>{room.reviewed?.includes(room.me) ? `みんなの確認待ち ${room.reviewed.length}/${room.humanCount}` : '確認して処理'}<ArrowRight /></button></> : !settled || mining.active ? <><span className="aftermath-label">ON THE TABLE</span><h2>宝石の行方を、見届けよう。</h2><p>採掘・泥棒・バッティングを卓上で処理しています。</p></> : game.phase === 'poison' && task ? <><span className="aftermath-label">POISON COUNTER</span><h2>{task.actor === room.me ? '失わせる宝石を選んでください' : `${game.players.find(p => p.id === task.actor)!.name}が劇薬の対象を選んでいます`}</h2>{task.actor === room.me && <div className="physical-poison-picks">{game.players.find(p => p.id === task.target)!.jewels.filter(j => task.candidates.includes(j.id)).map(j => <button key={j.id} aria-label={`${LABELS[j.kind]} ${j.value}を失わせる`} disabled={busy} onClick={() => void act('poison', { jewelId: j.id })}><DieFace play={j} /></button>)}</div>}</> : <><div className="aftermath-summary"><span className="aftermath-label">TURN {game.turn} COMPLETE</span><h2>次は、どんな一手を隠す？</h2><p>{game.logs.filter(log => log.startsWith(player.name)).slice(-2).join(' ') || '駆け引きは、まだ続く。'}</p></div><button className="primary next-hand" disabled={busy || room.ready.includes(room.me)} onClick={() => void act('ready')}>{room.ready.includes(room.me) ? `みんなの確認待ち ${room.ready.length}/${room.humanCount}` : game.turn === 10 ? '最終結果を見る' : '次のターンへ'}<ArrowRight /></button></>}
+      {countdown ? <><span className="aftermath-label">EVERYONE READY</span><h2>手を添えて、その瞬間を待とう。</h2><p>全員のカップを同じ合図で持ち上げます。</p></> : game.phase === 'inspect' ? <><span className="aftermath-label">CUPS OPEN</span><h2>みんなの一手を確認しよう</h2><p>得点や駒はまだ動きません。全員が確認すると処理を始めます。</p><button className="primary" aria-label="確認した · 得点と効果を実行" disabled={busy || room.reviewed?.includes(room.me)} onClick={() => void act('resolve')}>{room.reviewed?.includes(room.me) ? `みんなの確認待ち ${room.reviewed.length}/${room.humanCount}` : '確認して処理'}<ArrowRight /></button></> : !settled || mining.active ? <><span className="aftermath-label">ON THE TABLE</span><h2>宝石の行方を、見届けよう。</h2><p>採掘・泥棒・バッティングを卓上で処理しています。</p></> : game.phase === 'poison' && task ? <><span className="aftermath-label">POISON COUNTER</span><h2>{task.actor === room.me ? '失わせる宝石を選んでください' : `${game.players.find(p => p.id === task.actor)!.name}が劇薬の対象を選んでいます`}</h2>{task.actor === room.me && <div className="physical-poison-picks">{game.players.find(p => p.id === task.target)!.jewels.filter(j => task.candidates.includes(j.id)).map(j => <button key={j.id} aria-label={`${LABELS[j.kind]} ${j.value}を失わせる`} disabled={busy} onClick={() => { playSfx('poison'); void act('poison', { jewelId: j.id }); }}><DieFace play={j} /></button>)}</div>}</> : <><div className="aftermath-summary"><span className="aftermath-label">TURN {game.turn} COMPLETE</span><h2>次は、どんな一手を隠す？</h2><p>{game.logs.filter(log => log.startsWith(player.name)).slice(-2).join(' ') || '駆け引きは、まだ続く。'}</p></div><button className="primary next-hand" disabled={busy || room.ready.includes(room.me)} onClick={() => void act('ready')}>{room.ready.includes(room.me) ? `みんなの確認待ち ${room.ready.length}/${room.humanCount}` : game.turn === 10 ? '最終結果を見る' : '次のターンへ'}<ArrowRight /></button></>}
     </section>}
     <section className="table-stage" aria-label={game.players.length + '人で囲むゲーム卓'}>
       <TableCanvas state={{ game, me: room.me, draft: effectiveDraft, side, locked: room.locked, overhead, revealAt: room.revealAt, serverNow: room.serverNow, miningMixing: mining.mixing }} opponent={opponent.id} onSide={setSide} onChest={() => setDrawer('market')} onPlayer={id => { setInspectedPlayer(id); setDrawer('collection'); }} />
