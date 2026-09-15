@@ -21,7 +21,7 @@ function seat(room: Room, token: string) {
   return own;
 }
 function session(room: Room, own: Seat): Session { return { code: room.code, token: own.token, playerId: own.id }; }
-function nameOf(name: unknown) { return typeof name === 'string' && name.trim() ? name.trim().slice(0, 16) : 'ハンター'; }
+function nameOf(name: unknown) { return typeof name === 'string' && name.trim() ? name.trim().slice(0, 16) : 'プレイヤー'; }
 function createRoom(humanCount: number, name: unknown): Session {
   if (![1, 2, 3, 4].includes(humanCount)) throw new Error('プレイ人数を選んでください');
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
