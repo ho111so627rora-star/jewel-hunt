@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { applyPoison, chooseCpu, createGame, detectCollisions, detectDoubles, nextTurn, resolveTurn, schedule, score, validateSelection, values } from './engine';
+import { applyPoison, chooseCpu, createGame, detectCollisions, detectDoubles, nextTurn, resolveTurn, schedule, score, selectableValues, validateSelection, values } from './engine';
 import type { Game, Kind, Play, Selection } from './types';
 import { COLORS } from './constants';
 const rng = () => 0.25;
@@ -91,10 +91,10 @@ describe('ゲームエンジン', () => {
     expect(r.market.ruby[5]).toBe('p1');
     expect(r.visualEvents).toContainEqual({ type: 'thief', player: 'p1', from: 'p0', die: ruby });
   });
-  it('ゾロ目でも泥棒は盗める。残るゾロ目宝石は袋へ戻す', () => {
+  it('ゾロ目でも泥棒は盗める。残るゾロ目宝石は採掘場へ戻す', () => {
     const g = createGame([], 1), s = selections(g);
     s.p0 = [play(g, 0, 'ruby', 6), play(g, 0, 'ruby', 6, 1)]; s.p1[1] = play(g, 1, 'thief');
-    const r = resolveTurn(g, s, rng); expect(score(r.players[1]).total).toBe(6); expect(score(r.players[0]).total).toBe(0); expect(r.players[0].bag).toHaveLength(15);
+    const r = resolveTurn(g, s, rng); expect(score(r.players[1]).total).toBe(6); expect(score(r.players[0]).total).toBe(0); expect(r.players[0].bag).toHaveLength(14); expect(r.miningBag).toHaveLength(17);
   });
   it('劇薬で赤6を失うと枠が空き、全員が再び赤6を選べる', () => {
     const g = createGame([], 1), s = selections(g);
@@ -147,6 +147,57 @@ describe('ゲームエンジン', () => {
     const g = createGame([], 1); g.players[0].jewels = COLORS.map((kind, i) => ({ id: String(i), kind, value: 1, obtainedTurn: 1, postSellout: false }));
     expect(score(g.players[0], true)).toEqual({ base: 4, bonus: 5, total: 9 });
   });
+
+  it.each([1, 2, 3, 4, 5, 6])('同色%dのゾロ目は2個とも採掘場へ戻り、手持ちが2個減る（旧クライアントの確定済み手も処理）', value => {
+    const g = createGame([], 1), s = selections(g);
+    s.p0 = [play(g, 0, 'ruby', value), play(g, 0, 'ruby', value, 1)];
+    const r = resolveTurn(g, s, rng);
+    expect(r.players[0].bag).toHaveLength(14);
+    expect(r.players[0].jewels).toHaveLength(0);
+    expect(r.miningBag).toHaveLength(18);
+    for (const die of s.p0) {
+      expect(r.miningBag.some(d => d.id === die!.id)).toBe(true);
+      expect(r.visualEvents).toContainEqual({type:'collision',player:'p0',die});
+    }
+    expect(r.market.ruby.every(v => v === null)).toBe(true);
+  });
+  it.each([2,3,4,5,6])('同色%dの重複選択はAPIでも拒否する', value => {
+    const g=createGame([],1), pair:Selection=[play(g,0,'ruby',value),play(g,0,'ruby',value,1)];
+    expect(()=>validateSelection(g,'p0',pair)).toThrow('別の数字');
+    expect(selectableValues(g,'ruby',pair[0])).not.toContain(value);
+    expect(selectableValues(g,'sapphire',pair[0])).toContain(value);
+  });
+  it('完売後の1・1も両方採掘場へ戻す',()=>{
+    const g=createGame([],1), s=selections(g);g.market.ruby.fill('p1');
+    s.p0=[play(g,0,'ruby',1),play(g,0,'ruby',1,1)];
+    expect(()=>validateSelection(g,'p0',s.p0)).not.toThrow();
+    const r=resolveTurn(g,s,rng);
+    expect(r.players[0].bag).toHaveLength(14);
+    expect(r.miningBag).toHaveLength(18);
+    expect(r.players[0].jewels).toHaveLength(0);
+  });
+  it('最後に同色の同じ数字しか残っていなくてもCPUと人間の手が成立する',()=>{
+    const g=createGame([],1);g.market.ruby.fill('p1');g.market.ruby[5]=null;
+    g.players[0].bag=g.players[0].bag.filter(d=>d.kind==='ruby').slice(0,2);
+    const pair=chooseCpu(g,'p0',rng);
+    expect(pair.map(d=>d!.value)).toEqual([6,6]);
+    expect(()=>validateSelection(g,'p0',pair)).not.toThrow();
+    const s=selections(createGame([],1));s.p0=pair;
+    const r=resolveTurn(g,s,rng);
+    expect(r.players[0].bag).toHaveLength(0);
+    expect(r.miningBag).toHaveLength(18);
+  });
+  it('1・1を泥棒2個に盗まれても手持ちへ戻らず、獲得できない2個目は採掘場へ',()=>{
+    const g=createGame([],1),s=selections(g);
+    s.p0=[play(g,0,'ruby',1),play(g,0,'ruby',1,1)];
+    s.p1=[play(g,1,'thief'),play(g,1,'thief',0,1)];
+    const r=resolveTurn(g,s,rng);
+    expect(r.players[0].bag).toHaveLength(14);
+    expect(r.players[1].bag).toHaveLength(14);
+    expect(r.players[1].jewels).toHaveLength(1);
+    expect(r.miningBag).toHaveLength(17);
+  });
+
   it('100試合が10ターンを完走し、サイコロ総数を保存する', () => {
     let seed = 1234; const random = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
     for (let n = 0; n < 100; n++) {

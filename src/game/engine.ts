@@ -21,6 +21,11 @@ export function values(game: Game, color: Color): number[] {
   const open = game.market[color].flatMap((owner, i) => owner === null ? [i + 1] : []);
   return open.length ? open : [1];
 }
+// A duplicate 1 (or the last available number) remains playable so a hand cannot deadlock.
+export function selectableValues(game: Game, color: Color, other: Play | null): number[] {
+  const available = values(game, color);
+  return available.filter(value => value === 1 || available.length === 1 || other?.kind !== color || other.value !== value);
+}
 export function score(player: Player, final = false) {
   const base = player.jewels.reduce((s, j) => s + j.value, 0);
   const bonus = new Set(player.jewels.map(j => j.kind)).size === 4 ? COMPLETE_BONUS : 0;
@@ -37,11 +42,12 @@ export function detectCollisions(selections: Game['selections'], doubles = detec
   });
   return new Set([...groups.values()].filter(ids => ids.length > 1).flat());
 }
-export function validateSelection(game: Game, playerId: string, selection: Selection) {
+export function validateSelection(game: Game, playerId: string, selection: Selection, enforceDuplicateChoice = true) {
   const player = game.players.find(p => p.id === playerId);
   if (!player || game.phase !== 'select' || !Array.isArray(selection) || selection.length !== 2) throw new Error('選択できません');
   const selected = selection.filter((p): p is Play => p !== null);
   if (selected.length !== Math.min(2, player.bag.length) || new Set(selected.map(p => p.id)).size !== selected.length) throw new Error('異なるサイコロを2個選んでください');
+  if (enforceDuplicateChoice && selected.some((play, i) => isJewel(play.kind) && !selectableValues(game, play.kind, selected[1 - i] || null).includes(play.value))) throw new Error('同じ色の2〜6は左右で別の数字を選んでください');
   for (const play of selected) {
     const die = player.bag.find(d => d.id === play.id);
     if (!die || die.kind !== play.kind || (isJewel(play.kind) ? !values(game, play.kind).includes(play.value) : play.value !== 0)) throw new Error('無効なサイコロまたは数字です');
@@ -62,8 +68,7 @@ export function chooseCasualCpu(game: Game, playerId: string, random: () => numb
     }).sort((a, b) => b.priority - a.priority);
     const die = weighted[0].die;
     pool.splice(pool.findIndex(d => d.id === die.id), 1);
-    let options = isJewel(die.kind) ? values(game, die.kind) : [0];
-    if (result[0] && isJewel(result[0].kind) && isJewel(die.kind) && options.length > 1) options = options.filter(v => v !== result[0]!.value);
+    const options = isJewel(die.kind) ? selectableValues(game, die.kind, result[0]) : [0];
     result[side] = { ...die, value: options[Math.floor(random() * options.length)] };
   }
   return result;
@@ -71,7 +76,7 @@ export function chooseCasualCpu(game: Game, playerId: string, random: () => numb
 
 export function resolveTurn(source: Game, selections: Game['selections'], random: () => number): Game {
   if (Object.keys(selections).length !== 4) throw new Error('全員の選択が必要です');
-  source.players.forEach(p => validateSelection(source, p.id, selections[p.id]));
+  source.players.forEach(p => validateSelection(source, p.id, selections[p.id], false));
   const game = structuredClone(source);
   game.history = [...(source.history || []), structuredClone(selections)];
   game.visualEvents = [];
@@ -103,7 +108,11 @@ export function resolveTurn(source: Game, selections: Game['selections'], random
             game.pendingAwards.push({ player: opponent.id, play, postSellout: source.market[play.kind].every(Boolean) });
             game.logs.push(`${opponent.name}の泥棒！ ${player.name}の${LABELS[play.kind]} ${play.value}を獲得。`);
           } else if (!doubles.has(player.id)) game.pendingAwards.push({ player: player.id, play, postSellout: source.market[play.kind].every(Boolean) });
-          else player.bag.push({ id: play.id, kind: play.kind });
+          else {
+            game.miningBag.push({ id: play.id, kind: play.kind });
+            game.visualEvents!.push({ type: 'collision', player: player.id, die: play });
+            game.logs.push(player.name + '：ゾロ目の宝石を採掘袋へ戻しました。');
+          }
         }
         if (play.kind === 'poison' && enemy?.kind === 'thief') {
           const candidates = oldJewels.get(opponent.id)!;
@@ -133,8 +142,9 @@ function finishScoring(game: Game): Game {
     // Sold-out status is from the beginning of this resolution, before awards.
     const postSellout = originallySoldOut ?? soldOut.has(play.kind);
     if (!postSellout && game.market[play.kind][play.value - 1] !== null) {
-      owner.bag.push({ id: play.id, kind: play.kind });
-      game.logs.push(`${LABELS[play.kind]} ${play.value}は獲得済みのため袋へ戻りました。`); continue;
+      game.miningBag.push({ id: play.id, kind: play.kind });
+      game.visualEvents = [...(game.visualEvents || []).filter(event => event.die.id !== play.id), { type: 'collision', player, die: play }];
+      game.logs.push(`${LABELS[play.kind]} ${play.value}は獲得済みのため採掘袋へ戻りました。`); continue;
     }
     if (!postSellout) game.market[play.kind][play.value - 1] = player;
     owner.jewels.push({ ...play, value: postSellout ? 1 : play.value, obtainedTurn: game.turn, postSellout });

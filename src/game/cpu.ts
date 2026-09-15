@@ -1,6 +1,6 @@
 import { COLORS, isJewel, TURNS } from './constants';
 import { facingCup } from './cups';
-import { schedule, values } from './engine';
+import { schedule, values, selectableValues } from './engine';
 import type { Color, Game, Kind, Play, Player, Selection } from './types';
 
 type Forecast = { play: Play; probability: number }[];
@@ -88,6 +88,7 @@ export function chooseCpu(game: Game, playerId: string, random: () => number): S
   let best: Selection = [choices[0], null], bestValue = -Infinity;
   for (const a of choices) for (const b of player.bag.length === 1 ? [null] : choices) {
     if (b?.id === a.id) continue;
+    if (b && isJewel(a.kind) && !selectableValues(game, a.kind, b).includes(a.value)) continue;
     let total = utilities[0].get(`${a.id}:${a.value}`)! + (b ? utilities[1].get(`${b.id}:${b.value}`)! : 0);
     if (b && isJewel(a.kind) && isJewel(b.kind) && a.kind === b.kind && a.value === b.value) total = -15;
     if (b && a.kind === b.kind && !ownColors.has(a.kind) && isJewel(a.kind)) total -= bonusValue(a.kind);
