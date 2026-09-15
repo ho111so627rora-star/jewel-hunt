@@ -24,8 +24,8 @@ CPUは公開済みの手の履歴と所持駒から左右別の傾向を見積�
 Node.js 22以上をインストールし、リポジトリを取得します。
 
 ```sh
-git clone https://github.com/ho111so627rora-star/jewel-hunt.git
-cd jewel-hunt
+git clone https://github.com/ho111so627rora-star/phantom-gem.git
+cd phantom-gem
 npm ci
 npm run build
 npm start
@@ -48,7 +48,7 @@ PCで http://localhost:3000 を開いてください。通常のNode.js環境で
 
 ## 遊ぶ
 
-1. 名前と人間の人数を選び、「ハントを始める」を押します。
+1. 名前と人間の人数を選び、「ゲームを始める」を押します。
 2. 2人以上の場合、ほかの人は別端末・別ブラウザで「ルームに参加」から6文字のコードを入力します。
 3. 好きな色を選び、ホストが開始します。
 4. 手前の左右のカップを選んで駒を入れます。宝石は上に向ける目も選び、「カップを伏せる」で決定します。
