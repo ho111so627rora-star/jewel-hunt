@@ -1,6 +1,6 @@
 .front-room{max-width:none;min-height:100dvh;padding:0 max(24px,calc((100vw - 1180px)/2));position:relative;background:radial-gradient(ellipse 55% 38% at 50% 2%,#4a2e1250,transparent 62%),radial-gradient(ellipse 70% 55% at 82% 90%,#1b120a70,transparent 65%),var(--bg)}
 .front-room:before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;background:repeating-linear-gradient(91deg,#00000000 0 2px,#ffffff03 2px 3px)}
-.front-room>*{position:relative;z-index:1}
+.front-room>*:not(.modal-backdrop){position:relative;z-index:1}
 .front-room .site-header{height:96px}
 .front-room .site-footer{padding:22px 0;margin-top:25px}
 .front-room .home{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(300px,.8fr);gap:34px 80px;padding:46px 0 0;align-items:center}
