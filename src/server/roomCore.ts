@@ -1,6 +1,6 @@
 import { applyPoison, chooseCpu, choosePoisonTarget, createGame, nextTurn, resolveTurn, validateSelection } from '../game/engine';
 import { COLORS } from '../game/constants';
-import type { Color, Game, Selection } from '../game/types';
+import type { Color, Game, Kind, Selection } from '../game/types';
 import type { RoomView, Session } from './types';
 import { publicGame } from './publicGame';
 
@@ -108,6 +108,9 @@ function act(code: string, token: string, action: string, payload: unknown) {
       p.bag.forEach(d => { if (d.kind === p.color) d.kind = color; }); p.color = color;
       if (p.cpu) p.name = `CPU ${i - room.humanCount + 1}`;
     });
+    // The shared mining pool should only hold colors actually in play (all 4 in standard, 2 in duel).
+    const activeColors = new Set<Kind>(room.game.players.map(p => p.color));
+    room.game.miningBag = room.game.miningBag.filter(d => activeColors.has(d.kind));
     primeCpu(room);
   } else {
     if (!room.game) throw new Error('ゲームが始まっていません');

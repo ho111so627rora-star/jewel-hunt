@@ -52,3 +52,13 @@ describe('1分の思考時間', () => {
     expect(getRoom(host.code, host.token).timedOut).toEqual(['p0']);
   });
 });
+describe('デュエルモード', () => {
+  it('席は2人分のみで、共有の採掘袋も使用する2色分だけになる', () => {
+    const host = createRoom(1, 'ホスト', 'duel');
+    const room = getRoom(host.code, host.token);
+    expect(room.seats).toHaveLength(2);
+    const started = act(host.code, host.token, 'start', {});
+    expect(started.game!.players).toHaveLength(2);
+    expect(started.game!.miningCount).toBe(8);
+  });
+});
