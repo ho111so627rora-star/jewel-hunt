@@ -1,4 +1,4 @@
-# ジュエルハント everyday
+# ファントムジェム（Phantom Gem）
 
 スマホ・PCのブラウザで遊べる、10ターンの宝石争奪ゲーム。Next.js / React / TypeScript / Three.jsで実装しています。
 

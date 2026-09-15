@@ -28,8 +28,8 @@ export function createTable(canvas: HTMLCanvasElement, anchor: (id: string, x: n
   (felt.material as THREE.MeshStandardMaterial).map = texture('felt'); (felt.material as THREE.MeshStandardMaterial).roughness = .98; felt.position.y = -.003; scene.add(felt);
   const innerLine = ring(4.68, .012, '#7c7547'); innerLine.position.y = .019; scene.add(innerLine);
   const centerLine = ring(1.35, .014, '#8f8056'); centerLine.position.y = .02; scene.add(centerLine);
-  const emblem = label('J E W E L   H U N T', '#9b9469', 2.4, .3); emblem.rotation.x = -Math.PI / 2; emblem.position.set(0, .025, 1.6); scene.add(emblem);
-  const sub = label('EVERYDAY  ·  THE HUNTERS’ TABLE', '#77856a', 2.2, .2); sub.rotation.x = -Math.PI / 2; sub.position.set(0, .027, 1.92); scene.add(sub);
+  const emblem = label('P H A N T O M   G E M', '#9b9469', 2.4, .3); emblem.rotation.x = -Math.PI / 2; emblem.position.set(0, .025, 1.6); scene.add(emblem);
+  const sub = label('THE PHANTOMS’ TABLE', '#77856a', 2.2, .2); sub.rotation.x = -Math.PI / 2; sub.position.set(0, .027, 1.92); scene.add(sub);
   const treasure = chest(); treasure.group.userData.action = 'chest'; treasure.group.position.z = -.15; scene.add(treasure.group);
   const chestContents = new THREE.Group(); treasure.group.add(chestContents);
   const chestGlow = new THREE.PointLight('#ffc16a', 0, 3); chestGlow.position.set(0, 1.1, 0); scene.add(chestGlow);

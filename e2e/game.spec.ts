@@ -49,7 +49,7 @@ test('スマホでゲーム開始・サイコロ選択・一斉公開', async ({
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
   await page.waitForLoadState('networkidle');
-  await expect(page.getByRole('heading', { name: /ジュエルハント/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /ファントムジェム/ })).toBeVisible();
   await page.screenshot({ path: 'test-results/home-mobile.png', fullPage: true });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.getByLabel('あなたの名前').fill('スマホハンター');

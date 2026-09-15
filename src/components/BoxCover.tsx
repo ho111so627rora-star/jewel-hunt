@@ -1,11 +1,11 @@
 import { PieceIcon } from './table/PieceIcon';
 
 function LeatherCup({ className }: { className: string }) {
-  return <div className={`cover-cup ${className}`}><div className="cover-cup-base" /><div className="cover-cup-body"><span>JH</span></div><div className="cover-cup-rim" /></div>;
+  return <div className={`cover-cup ${className}`}><div className="cover-cup-base" /><div className="cover-cup-body"><span>PG</span></div><div className="cover-cup-rim" /></div>;
 }
 export function BoxCover() {
   return <div className="box-cover" aria-hidden="true">
-    <div className="cover-print"><span>ジュエルハント</span><i>everyday</i></div>
+    <div className="cover-print"><span>ファントムジェム</span><i>Phantom Gem</i></div>
     <div className="cover-felt" />
     <LeatherCup className="cup-a" /><LeatherCup className="cup-b" />
     <div className="cover-piece cover-ruby"><PieceIcon kind="ruby" /></div>

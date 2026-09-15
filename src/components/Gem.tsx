@@ -17,7 +17,7 @@ export function Gem({ kind = 'emerald', className = '' }: { kind?: Kind; classNa
   </svg>;
 }
 export function DieFace({ play, hidden = false }: { play: Play | null; hidden?: boolean }) {
-  if (hidden) return <div className="cup"><span>JH</span></div>;
+  if (hidden) return <div className="cup"><span>PG</span></div>;
   if (!play) return <div className="die-face empty"><span>—</span><small>パス</small></div>;
   return <div className={`die-face ${play.kind}`}><Gem kind={play.kind} />{isJewel(play.kind) && <b>{play.value}</b>}<small>{LABELS[play.kind]}</small></div>;
 }
