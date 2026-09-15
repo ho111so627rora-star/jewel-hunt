@@ -4,7 +4,7 @@ import type { Game, Selection } from '../../game/types';
 import { COLORS } from '../../game/constants';
 import { schedule } from '../../game/engine';
 import { createMatchGuide } from './matchGuide';
-import { box, chest, clear, cup, dice, disposeObject, GOLD, label, mesh, PALETTE, piece, playKey, ring, texture } from './models';
+import { box, chest, clear, cup, dice, disposeObject, GOLD, label, mesh, octagonLine, PALETTE, piece, playKey, ring, texture } from './models';
 
 export type TableState = { game: Game; me: string; draft: Selection; side: number; locked: string[]; overhead: boolean; revealAt?: number; serverNow?: number; miningMixing?: boolean };
 type SeatObjects = { group: THREE.Group; cups: THREE.Group[]; pieces: THREE.Group[]; coasters: THREE.Mesh[]; treasures: THREE.Group; keys: string[] };
@@ -21,12 +21,13 @@ export function createTable(canvas: HTMLCanvasElement, anchor: (id: string, x: n
   key.shadow.mapSize.set(1024, 1024); key.shadow.bias = -.0004; key.shadow.normalBias = .025; key.target.position.set(0, 0, 0); scene.add(key, key.target);
   const fill = new THREE.PointLight('#a2c9dd', 25, 20, 1.5); fill.position.set(5, 5, -5); scene.add(fill);
   const floor = mesh(new THREE.PlaneGeometry(80, 80), '#10110d'); floor.rotation.x = -Math.PI / 2; floor.position.y = -1; scene.add(floor);
-  const table = mesh(new THREE.CylinderGeometry(5.2, 5.25, .4, 96), '#a08560');
+  const TABLE_ANGLE = -Math.PI / 8; // Offsets the octagon so a flat face centers on each seat direction (0°, 90°, 180°, 270°).
+  const table = mesh(new THREE.CylinderGeometry(5.2, 5.25, .4, 8, 1, false, TABLE_ANGLE), '#a08560');
   (table.material as THREE.MeshStandardMaterial).map = texture('wood'); table.position.y = -.22; scene.add(table);
-  const rim = ring(5.02, .055); rim.position.y = .007; scene.add(rim);
-  const felt = mesh(new THREE.CylinderGeometry(4.94, 4.94, .025, 96), '#b1c5b2');
+  const rim = octagonLine(5.03, .1, .05, GOLD); rim.position.y = .02; scene.add(rim);
+  const felt = mesh(new THREE.CylinderGeometry(4.9, 4.9, .025, 8, 1, false, TABLE_ANGLE), '#b1c5b2');
   (felt.material as THREE.MeshStandardMaterial).map = texture('felt'); (felt.material as THREE.MeshStandardMaterial).roughness = .98; felt.position.y = -.003; scene.add(felt);
-  const innerLine = ring(4.68, .012, '#7c7547'); innerLine.position.y = .019; scene.add(innerLine);
+  const innerLine = octagonLine(4.6, .024, .012, '#7c7547', .3, .5); innerLine.position.y = .019; scene.add(innerLine);
   const centerLine = ring(1.35, .014, '#8f8056'); centerLine.position.y = .02; scene.add(centerLine);
   const emblem = label('P H A N T O M   G E M', '#9b9469', 2.4, .3); emblem.rotation.x = -Math.PI / 2; emblem.position.set(0, .025, 1.6); scene.add(emblem);
   const sub = label('THE PHANTOMS’ TABLE', '#77856a', 2.2, .2); sub.rotation.x = -Math.PI / 2; sub.position.set(0, .027, 1.92); scene.add(sub);

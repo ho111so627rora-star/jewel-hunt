@@ -35,6 +35,19 @@ export function box(w: number, h: number, d: number, color: string, radius = .04
 export function ring(radius: number, tube: number, color = GOLD) {
   const object = mesh(new THREE.TorusGeometry(radius, tube, 8, 48), color, .8, .26); object.rotation.x = Math.PI / 2; return object;
 }
+// A flat 8-segment border traced at the octagon's face-center angles (offset -22.5°), matching the table's own thetaStart.
+export function octagonLine(radius: number, width: number, thickness: number, color = GOLD, metalness = .8, roughness = .26) {
+  const group = new THREE.Group();
+  const edge = 2 * radius * Math.sin(Math.PI / 8), apothem = radius * Math.cos(Math.PI / 8);
+  for (let i = 0; i < 8; i++) {
+    const angle = i * Math.PI / 4;
+    const segment = box(edge, thickness, width, color, Math.min(.02, thickness / 2), metalness);
+    (segment.material as THREE.MeshStandardMaterial).roughness = roughness;
+    segment.position.set(apothem * Math.sin(angle), 0, apothem * Math.cos(angle)); segment.rotation.y = angle;
+    group.add(segment);
+  }
+  return group;
+}
 export function label(text: string, color = '#ddc99c', width = 2, height = .32) {
   const canvas = document.createElement('canvas'); canvas.width = 512; canvas.height = 100;
   const ctx = canvas.getContext('2d')!; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
