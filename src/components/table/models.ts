@@ -43,9 +43,9 @@ export function label(text: string, color = '#ddc99c', width = 2, height = .32) 
   const object = new THREE.Mesh(new THREE.PlaneGeometry(width, height), new THREE.MeshBasicMaterial({ map, transparent: true, depthWrite: false }));
   object.userData.disposeMap = true; return object;
 }
-export function dice(kind: Color, value = 1, size = .48) {
+export function dice(kind: Color, value = 1, size = .52) {
   const group = new THREE.Group(); const body = box(size, size, size, PALETTE[kind], size * .12, .12);
-  (body.material as THREE.MeshStandardMaterial).roughness = .24; body.position.y = size / 2; group.add(body);
+  (body.material as THREE.MeshStandardMaterial).roughness = .48; body.position.y = size / 2; group.add(body);
   const pips: Record<number, [number, number][]> = {
     1: [[0, 0]], 2: [[-.23, -.23], [.23, .23]], 3: [[-.23, -.23], [0, 0], [.23, .23]],
     4: [[-.23, -.23], [-.23, .23], [.23, -.23], [.23, .23]],
@@ -57,7 +57,7 @@ export function dice(kind: Color, value = 1, size = .48) {
   const faces = [{ value, axis: 'top' }, { value: 7 - value, axis: 'bottom' }, { value: front, axis: 'front' }, { value: right, axis: 'right' }, { value: 7 - front, axis: 'back' }, { value: 7 - right, axis: 'left' }];
   const pipGeometries: THREE.BufferGeometry[] = [];
   faces.forEach(face => (pips[face.value] || pips[1]).forEach(([a, b]) => {
-    const pip = mesh(new THREE.CircleGeometry(size * .058, 12), '#fff3d5', .1, .4);
+    const pip = mesh(new THREE.CircleGeometry(size * .072, 16), '#fff3d5', .1, .4);
     if (face.axis === 'top') { pip.rotation.x = -Math.PI / 2; pip.position.set(a * size, size + .003, b * size); }
     if (face.axis === 'bottom') { pip.rotation.x = Math.PI / 2; pip.position.set(a * size, -.003, b * size); }
     if (face.axis === 'front') pip.position.set(a * size, size / 2 + b * size, size / 2 + .003);
@@ -69,7 +69,7 @@ export function dice(kind: Color, value = 1, size = .48) {
   }));
   const mergedPips = mergeGeometries(pipGeometries);
   pipGeometries.forEach(geometry => geometry.dispose());
-  if (mergedPips) { const pipsMesh = mesh(mergedPips, '#fff3d5', .1, .4); pipsMesh.castShadow = false; group.add(pipsMesh); }
+  if (mergedPips) { const pipsMesh = mesh(mergedPips, '#fff3d5', 0, .75); pipsMesh.castShadow = false; group.add(pipsMesh); }
   return group;
 }
 export function piece(kind: Kind, value = 1): THREE.Group {

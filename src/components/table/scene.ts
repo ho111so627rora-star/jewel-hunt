@@ -171,9 +171,11 @@ export function createTable(canvas: HTMLCanvasElement, anchor: (id: string, x: n
         seat.cups.forEach((shell, side) => {
           const editing = local && state!.game.phase === 'select' && !state!.locked.includes(state!.me);
           const open = revealed ? 1 - Math.pow(1 - revealProgress, 3) : editing ? .97 : 0;
-          const targetY = .105 + open * 1.06;
+          const targetY = .105 + open * 1.16;
+          const targetX = (side === 0 ? -1 : 1) * (.65 + open * .65);
+          shell.position.x += (targetX - shell.position.x) * (reduceMotion ? 1 : .23);
           shell.position.y += (targetY - shell.position.y) * (reduceMotion ? 1 : .23);
-          shell.position.z += (3.22 + open * .28 - shell.position.z) * (reduceMotion ? 1 : .23);
+          shell.position.z += (3.22 + open * .72 - shell.position.z) * (reduceMotion ? 1 : .23);
           shell.rotation.z = (side === 0 ? -.11 : .11) * open;
           shell.rotation.x = -.14 * open;
           if (!reduceMotion && state!.game.phase === 'reveal') shell.rotation.z = Math.sin(now * .025) * .012;
