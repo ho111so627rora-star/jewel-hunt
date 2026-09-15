@@ -47,7 +47,7 @@ export function createCloudHandler(database: CloudStore, allowedOrigins: string[
         let result: unknown, failure: unknown;
         try {
           if (request.method === 'GET') result = service.getRoom(code, token);
-          else if (creating) result = service.createRoom(Number(data.humanCount), data.name);
+          else if (creating) result = service.createRoom(Number(data.humanCount), data.name, data.mode);
           else if (data.action === 'join') result = service.joinRoom(code, data.name);
           else result = service.act(code, token, String(data.action), data);
         } catch (error) { failure = error; }

@@ -4,9 +4,12 @@ export type Die = { id: string; kind: Kind };
 export type Play = Die & { value: number };
 export type Selection = [Play | null, Play | null];
 export type Jewel = Play & { obtainedTurn: number; postSellout: boolean };
-export type Player = { id: string; name: string; color: Color; cpu: boolean; bag: Die[]; jewels: Jewel[] };
+export type GameMode = 'standard' | 'duel';
+export type Player = {
+  completionBonus?: boolean; id: string; name: string; color: Color; cpu: boolean; bag: Die[]; jewels: Jewel[] };
 export type PoisonTask = { actor: string; target: string; candidates: string[] };
 export type Game = {
+  mode?: GameMode;
   turn: number;
   phase: 'select' | 'reveal' | 'inspect' | 'poison' | 'result' | 'over';
   players: Player[];

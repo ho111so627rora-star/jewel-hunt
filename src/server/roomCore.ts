@@ -5,7 +5,7 @@ import type { RoomView, Session } from './types';
 import { publicGame } from './publicGame';
 
 export type Seat = { id: string; token: string; name: string; color: Color; lastSeen: number };
-export type Room = { code: string; humanCount: number; seats: Seat[]; game: Game | null; locked: Record<string, Selection>; ready: string[]; reviewed?: string[]; revealAt?: number; beforeReveal?: Game; selectionDeadline?: number; timedOut?: string[] };
+export type Room = { code: string; humanCount: number; mode?: 'standard' | 'duel'; seats: Seat[]; game: Game | null; locked: Record<string, Selection>; ready: string[]; reviewed?: string[]; revealAt?: number; beforeReveal?: Game; selectionDeadline?: number; timedOut?: string[] };
 export const REVEAL_DELAY_MS = 2800;
 export const THINK_TIME_MS = 60_000;
 export interface RoomStore { exists(code: string): boolean; read(code: string): Room; write(room: Room): void; }
@@ -22,13 +22,14 @@ function seat(room: Room, token: string) {
 }
 function session(room: Room, own: Seat): Session { return { code: room.code, token: own.token, playerId: own.id }; }
 function nameOf(name: unknown) { return typeof name === 'string' && name.trim() ? name.trim().slice(0, 16) : 'プレイヤー'; }
-function createRoom(humanCount: number, name: unknown): Session {
-  if (![1, 2, 3, 4].includes(humanCount)) throw new Error('プレイ人数を選んでください');
+function createRoom(humanCount: number, name: unknown, mode: unknown = 'standard'): Session {
+  if (mode !== 'standard' && mode !== 'duel') throw new Error('対戦モードが無効です');
+  if (!(mode === 'duel' ? [1, 2] : [1, 2, 3, 4]).includes(humanCount)) throw new Error('プレイ人数を選んでください');
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let code: string;
   do { code = Array.from({ length: 6 }, () => alphabet[Math.floor(random() * alphabet.length)]).join(''); } while (store.exists(code));
   const own: Seat = { id: 'p0', name: nameOf(name), color: 'ruby', token: secureToken(), lastSeen: Date.now() };
-  const room: Room = { code, humanCount, seats: [own], game: null, locked: {}, ready: [] };
+  const room: Room = { code, humanCount, mode, seats: [own], game: null, locked: {}, ready: [] };
   save(room); return session(room, own);
 }
 function joinRoom(code: string, name: unknown): Session {
@@ -81,9 +82,9 @@ function getRoom(code: string, token: string): RoomView {
   if (game) { game.pendingAwards = []; }
   const unusedColors = COLORS.filter(c => !room.seats.some(s => s.color === c));
   return {
-    code, humanCount: room.humanCount, me: own.id, host: own.id === 'p0', game: game ? publicGame(game, own.id) : null, revealAt: room.revealAt, serverNow: Date.now(),
+    code, mode: room.mode || 'standard', humanCount: room.humanCount, me: own.id, host: own.id === 'p0', game: game ? publicGame(game, own.id) : null, revealAt: room.revealAt, serverNow: Date.now(),
     locked: Object.keys(room.locked), ready: room.ready, reviewed: room.reviewed || [], selectionDeadline: room.selectionDeadline, timedOut: room.timedOut || [],
-    seats: COLORS.map((_, i) => {
+    seats: COLORS.slice(0, room.mode === 'duel' ? 2 : 4).map((_, i) => {
       const s = room.seats[i];
       return { id: `p${i}`, name: s?.name || (i >= room.humanCount ? `CPU ${i - room.humanCount + 1}` : '参加を待っています'),
         color: s?.color || unusedColors[i - room.seats.length], cpu: i >= room.humanCount, joined: !!s || i >= room.humanCount, online: !!s && Date.now() - s.lastSeen < 20_000 };
@@ -100,7 +101,7 @@ function act(code: string, token: string, action: string, payload: unknown) {
     own.color = data.color as Color;
   } else if (action === 'start' || action === 'rematch') {
     if (own.id !== 'p0' || room.seats.length !== room.humanCount || (room.game && room.game.phase !== 'over')) throw new Error('全員の参加後、ホストが開始できます');
-    room.game = createGame(room.seats.map(s => s.name), room.humanCount);
+    room.game = createGame(room.seats.map(s => s.name), room.humanCount, room.mode);
     const unused = COLORS.filter(c => !room.seats.some(s => s.color === c));
     room.game.players.forEach((p, i) => {
       const color = room.seats[i]?.color || unused[i - room.humanCount];
@@ -114,7 +115,7 @@ function act(code: string, token: string, action: string, payload: unknown) {
       if (room.locked[own.id]) throw new Error('選択は確定済みです');
       const selection = data.selection as Selection; validateSelection(room.game, own.id, selection);
       room.locked[own.id] = selection;
-      if (Object.keys(room.locked).length === 4) {
+      if (Object.keys(room.locked).length === room.game.players.length) {
         openCups(room);
       }
     } else if (action === 'resolve') {

@@ -1,20 +1,21 @@
 import { COLORS, COMPLETE_BONUS, LABELS, SPECIAL_COUNTS, TURNS, isJewel } from './constants';
 import { facingCup } from './cups';
-import type { Color, Game, Kind, Play, Player, Selection } from './types';
+import type { Color, Game, GameMode, Kind, Play, Player, Selection } from './types';
 
-export function createGame(names: string[], humanCount: number): Game {
+export function createGame(names: string[], humanCount: number, mode: GameMode = 'standard'): Game {
   return {
-    turn: 1, phase: 'select', market: Object.fromEntries(COLORS.map(c => [c, Array(6).fill(null)])) as Game['market'],
+    mode, turn: 1, phase: 'select', market: Object.fromEntries(COLORS.map(c => [c, Array(6).fill(null)])) as Game['market'],
     miningBag: COLORS.flatMap(c => Array.from({ length: 4 }, (_, i) => ({ id: `mine-${c}-${i}`, kind: c }))),
     discard: [], selections: {}, poisonTasks: [], pendingAwards: [], logs: [],
-    players: COLORS.map((color, i) => ({
-      id: `p${i}`, name: names[i] || (i < humanCount ? `プレイヤー${i + 1}` : `CPU ${i + 1}`), color, cpu: i >= humanCount, jewels: [],
+    players: COLORS.slice(0, mode === 'duel' ? 2 : 4).map((color, i) => ({
+      completionBonus: mode !== 'duel', id: `p${i}`, name: names[i] || (i < humanCount ? `プレイヤー${i + 1}` : `CPU ${i + 1}`), color, cpu: i >= humanCount, jewels: [],
       bag: ([...Array<Kind>(6).fill(color), ...Array<Kind>(SPECIAL_COUNTS.thief).fill('thief'), ...Array<Kind>(SPECIAL_COUNTS.mining).fill('mining'), ...Array<Kind>(SPECIAL_COUNTS.poison).fill('poison')]).map((kind, j) => ({ id: `p${i}-${j}`, kind })),
     })),
   };
 }
 
-export function schedule(turn: number): [number, number][] {
+export function schedule(turn: number, playerCount = 4): [number, number][] {
+  if (playerCount === 2) return [[0, 1]];
   return ([[[0, 1], [2, 3]], [[0, 2], [1, 3]], [[0, 3], [1, 2]]] as [number, number][][])[(turn - 1) % 3];
 }
 export function values(game: Game, color: Color): number[] {
@@ -28,7 +29,7 @@ export function selectableValues(game: Game, color: Color, other: Play | null): 
 }
 export function score(player: Player, final = false) {
   const base = player.jewels.reduce((s, j) => s + j.value, 0);
-  const bonus = new Set(player.jewels.map(j => j.kind)).size === 4 ? COMPLETE_BONUS : 0;
+  const bonus = player.completionBonus !== false && new Set(player.jewels.map(j => j.kind)).size === 4 ? COMPLETE_BONUS : 0;
   return { base, bonus, total: base + (final ? bonus : 0) };
 }
 export function detectDoubles(selections: Game['selections']): Set<string> {
@@ -57,7 +58,7 @@ export function validateSelection(game: Game, playerId: string, selection: Selec
 export { chooseCpu, choosePoisonTarget } from './cpu';
 export function chooseCasualCpu(game: Game, playerId: string, random: () => number): Selection {
   const player = game.players.find(p => p.id === playerId)!;
-  const pair = schedule(game.turn).find(p => p.includes(game.players.indexOf(player)))!;
+  const pair = schedule(game.turn, game.players.length).find(p => p.includes(game.players.indexOf(player)))!;
   const opponent = game.players[pair.find(i => game.players[i].id !== playerId)!];
   const pool = [...player.bag];
   const result: Selection = [null, null];
@@ -75,7 +76,7 @@ export function chooseCasualCpu(game: Game, playerId: string, random: () => numb
 }
 
 export function resolveTurn(source: Game, selections: Game['selections'], random: () => number): Game {
-  if (Object.keys(selections).length !== 4) throw new Error('全員の選択が必要です');
+  if (Object.keys(selections).length !== source.players.length) throw new Error('全員の選択が必要です');
   source.players.forEach(p => validateSelection(source, p.id, selections[p.id], false));
   const game = structuredClone(source);
   game.history = [...(source.history || []), structuredClone(selections)];
@@ -96,7 +97,7 @@ export function resolveTurn(source: Game, selections: Game['selections'], random
       }
     });
   });
-  for (const [a, b] of schedule(game.turn)) {
+  for (const [a, b] of schedule(game.turn, game.players.length)) {
     for (const side of [0, 1]) {
       for (const [own, other] of [[a, b], [b, a]]) {
         const player = game.players[own], opponent = game.players[other];

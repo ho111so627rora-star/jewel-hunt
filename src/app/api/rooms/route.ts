@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const data = await request.json();
-    if (data.action === 'create') return NextResponse.json(createRoom(Number(data.humanCount), data.name));
+    if (data.action === 'create') return NextResponse.json(createRoom(Number(data.humanCount), data.name, data.mode));
     if (data.action === 'join') return NextResponse.json(joinRoom(String(data.code).toUpperCase(), data.name));
     return NextResponse.json(act(String(data.code).toUpperCase(), request.headers.get('authorization')?.replace(/^Bearer /, '') || '', data.action, data));
   } catch (error) { return failure(error); }

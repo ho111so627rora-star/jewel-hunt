@@ -31,7 +31,7 @@ function forecast(game: Game, player: Player, side: number): Forecast {
   return choices.map((play, i) => ({ play, probability: weights[i] / total }));
 }
 function lossOf(player: Player, jewel: Play) {
-  const breaksComplete = new Set(player.jewels.map(j => j.kind)).size === 4 && player.jewels.filter(j => j.kind === jewel.kind).length === 1;
+  const breaksComplete = player.completionBonus !== false && new Set(player.jewels.map(j => j.kind)).size === 4 && player.jewels.filter(j => j.kind === jewel.kind).length === 1;
   return jewel.value + (breaksComplete ? 5 : 0);
 }
 export function choosePoisonTarget(game: Game, targetId: string, candidates: string[]): string {
@@ -46,12 +46,12 @@ export function choosePoisonTarget(game: Game, targetId: string, candidates: str
 export function chooseCpu(game: Game, playerId: string, random: () => number): Selection {
   const player = game.players.find(p => p.id === playerId)!;
   if (!player.bag.length) return [null, null];
-  const pair = schedule(game.turn).find(p => p.includes(game.players.indexOf(player)))!;
+  const pair = schedule(game.turn, game.players.length).find(p => p.includes(game.players.indexOf(player)))!;
   const opponent = game.players[pair.find(i => game.players[i].id !== playerId)!];
   const forecasts = new Map(game.players.filter(p => p.id !== playerId).map(p => [p.id, [forecast(game, p, 0), forecast(game, p, 1)]]));
   const enemy = forecasts.get(opponent.id)!;
   const ownColors = new Set(player.jewels.map(j => j.kind));
-  const bonusValue = (kind: Kind) => ownColors.has(kind) ? 0 : ownColors.size === 3 ? 5 : ownColors.size === 2 ? 2 : 1;
+  const bonusValue = (kind: Kind) => player.completionBonus === false || ownColors.has(kind) ? 0 : ownColors.size === 3 ? 5 : ownColors.size === 2 ? 2 : 1;
   const maxLoss = Math.max(0, ...player.jewels.map(j => lossOf(player, j)));
   const opponentLoss = Math.max(0, ...opponent.jewels.map(j => lossOf(opponent, j)));
   const rivalWeight = .55 + (game.turn >= 8 ? .2 : 0);

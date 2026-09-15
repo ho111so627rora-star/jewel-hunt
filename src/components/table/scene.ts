@@ -8,7 +8,7 @@ import { box, chest, clear, cup, dice, disposeObject, GOLD, label, mesh, PALETTE
 
 export type TableState = { game: Game; me: string; draft: Selection; side: number; locked: string[]; overhead: boolean; revealAt?: number; serverNow?: number; miningMixing?: boolean };
 type SeatObjects = { group: THREE.Group; cups: THREE.Group[]; pieces: THREE.Group[]; coasters: THREE.Mesh[]; treasures: THREE.Group; keys: string[] };
-export function createTable(canvas: HTMLCanvasElement, anchor: (id: string, x: number, y: number) => void, choose: (side: number) => void, inspect: () => void) {
+export function createTable(canvas: HTMLCanvasElement, anchor: (id: string, x: number, y: number) => void, choose: (side: number) => void, inspect: () => void, playerCount = 4) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'low-power' });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 1.6)); renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.22;
@@ -36,8 +36,8 @@ export function createTable(canvas: HTMLCanvasElement, anchor: (id: string, x: n
   const seats: SeatObjects[] = [];
   const matchGuide = createMatchGuide(); scene.add(matchGuide.group);
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  for (let i = 0; i < 4; i++) {
-    const group = new THREE.Group(); group.rotation.y = i * Math.PI / 2; scene.add(group);
+  for (let i = 0; i < playerCount; i++) {
+    const group = new THREE.Group(); group.rotation.y = i * Math.PI * 2 / playerCount; scene.add(group);
     const chair = box(1.8, 1.5, .28, '#31241d', .12); chair.position.set(0, .08, 5.63); group.add(chair);
     const chairInset = box(1.48, 1.12, .12, '#483527', .13); chairInset.position.set(0, .14, 5.45); group.add(chairInset);
     const mat = box(2.7, .035, 1.64, '#1c3029', .15); mat.position.set(0, .04, 3.24); group.add(mat);
@@ -71,13 +71,13 @@ export function createTable(canvas: HTMLCanvasElement, anchor: (id: string, x: n
     renderer.setSize(width, height, false); camera.aspect = width / height; camera.updateProjectionMatrix();
   }
   const observer = new ResizeObserver(resize); observer.observe(canvas); resize();
-  function worldPoint(index: number, x: number, z: number, y = .12) { return new THREE.Vector3(x, y, z).applyAxisAngle(new THREE.Vector3(0, 1, 0), index * Math.PI / 2); }
+  function worldPoint(index: number, x: number, z: number, y = .12) { return new THREE.Vector3(x, y, z).applyAxisAngle(new THREE.Vector3(0, 1, 0), index * Math.PI * 2 / playerCount); }
   function update(next: TableState) {
     const old = state; state = next;
     const phase = next.game.phase, reveal = phase === 'inspect' || phase === 'result' || phase === 'poison' || phase === 'over';
     const mySeat = next.game.players.findIndex(p => p.id === next.me);
-    const match = schedule(next.game.turn).find(pair => pair.includes(mySeat))!;
-    matchGuide.update(mySeat, match.find(index => index !== mySeat)!, phase !== 'over');
+    const match = schedule(next.game.turn, playerCount).find(pair => pair.includes(mySeat))!;
+    matchGuide.update(mySeat * 4 / playerCount, match.find(index => index !== mySeat)! * 4 / playerCount, phase !== 'over');
     if (previousTurn !== next.game.turn) { eventIds.clear(); flights.splice(0).forEach(f => disposeObject(f.object)); }
     if (reveal && (previousTurn !== next.game.turn || !['inspect', 'result', 'poison', 'over'].includes(previousPhase))) {
       // A reload displays the settled board; a live reveal follows the shared server time.
@@ -135,7 +135,7 @@ export function createTable(canvas: HTMLCanvasElement, anchor: (id: string, x: n
       flights.push({ object, from, to, start: Math.max(performance.now(), revealStarted + 900) + index * 210, duration: 950, spin: true, dieId: event.die.id, touchesChest: ['mining', 'collision', 'poison'].includes(event.type) });
     });
     previousTurn = next.game.turn; previousPhase = phase;
-    const desiredAngle = next.game.players.findIndex(p => p.id === next.me) * Math.PI / 2;
+    const desiredAngle = next.game.players.findIndex(p => p.id === next.me) * Math.PI * 2 / playerCount;
     currentAngle = desiredAngle;
   }
   function pick(event: PointerEvent) {
